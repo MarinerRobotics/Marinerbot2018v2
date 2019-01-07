@@ -12,6 +12,7 @@
     ".project": true
   },
   "wpilib.online": true,
+<<<<<<< HEAD
   "files.associations": {
     "array": "cpp",
     "atomic": "cpp",
@@ -56,4 +57,7 @@
     "typeinfo": "cpp",
     "utility": "cpp"
   }
+=======
+  "C_Cpp.default.configurationProvider": "vscode-wpilib"
+>>>>>>> b6825388af4b0cc51ef645411172495497b923b4
 }
