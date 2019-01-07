@@ -42,3 +42,7 @@ void Elevator::Periodic() {
 // Put methods for controlling this subsystem
 // here. Call these from Commands.
 
+int Elevator::GetElPosition(){
+    int elevatorEncoderPosition = elevatorTalon->GetSelectedSensorPosition(0);
+    return elevatorEncoderPosition;
+}
