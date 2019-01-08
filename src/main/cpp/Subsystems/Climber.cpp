@@ -41,4 +41,15 @@ void Climber::Periodic() {
 
 // Put methods for controlling this subsystem
 // here. Call these from Commands.
-
+void Climber::ClimbUp(){
+    climberSpark->Set(-1.0);
+}
+void Climber::ClimbDown(){
+    climberSpark->Set(0.4);
+}
+void Climber::SwingUp(){
+    climberSpark->Set(-.65);
+}
+void Climber::ClimbStop(){
+    climberSpark->StopMotor();
+}

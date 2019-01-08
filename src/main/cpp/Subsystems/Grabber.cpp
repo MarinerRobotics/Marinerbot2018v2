@@ -41,4 +41,12 @@ void Grabber::Periodic() {
 
 // Put methods for controlling this subsystem
 // here. Call these from Commands.
-
+void Grabber::OpenGrabber(){
+	grabberSolenoid->Set(frc::DoubleSolenoid::kForward);
+}
+void Grabber::CloseGrabber(){
+	grabberSolenoid->Set(frc::DoubleSolenoid::kReverse);
+}
+void Grabber::Stop(){
+	grabberSolenoid->Set(frc::DoubleSolenoid::kOff);
+}

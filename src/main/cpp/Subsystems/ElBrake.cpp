@@ -41,4 +41,12 @@ void ElBrake::Periodic() {
 
 // Put methods for controlling this subsystem
 // here. Call these from Commands.
-
+void ElBrake::BrakeOn(){
+	elBrakeSolenoid->Set(frc::DoubleSolenoid::kReverse);
+}
+void ElBrake::BrakeOff(){
+	elBrakeSolenoid->Set(frc::DoubleSolenoid::kForward);
+}
+void ElBrake::Stop(){
+	elBrakeSolenoid->Set(frc::DoubleSolenoid::kOff);
+}
