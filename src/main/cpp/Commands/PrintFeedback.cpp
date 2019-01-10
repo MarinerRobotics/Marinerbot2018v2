@@ -22,17 +22,18 @@ PrintFeedback::PrintFeedback(): frc::Command() {
 
 // Called just before this Command runs the first time
 void PrintFeedback::Initialize() {
-
+SetTimeout(.3);
 }
 
 // Called repeatedly when this Command is scheduled to run
 void PrintFeedback::Execute() {
-
+Robot::driveBase->showInfo();
 }
 
 // Make this return true when this Command no longer needs to run execute()
 bool PrintFeedback::IsFinished() {
-    return false;
+     return IsTimedOut();
+    //return false;
 }
 
 // Called once after isFinished returns true
@@ -43,5 +44,5 @@ void PrintFeedback::End() {
 // Called when another command which requires one or more of the same
 // subsystems is scheduled to run
 void PrintFeedback::Interrupted() {
-
+End();
 }
