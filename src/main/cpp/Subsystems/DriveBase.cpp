@@ -118,7 +118,10 @@ void DriveBase::Halt(){
 }
 
 void DriveBase::JoyDrive(double myX, double myY){
-    driveTrain->TankDrive(myX, myY);
+    myX = myX *1;
+    myY = myY *-1;
+    driveTrain->ArcadeDrive(myX, myY);
+   // driveTrain->TankDrive(myX, myY);
 }
 
 void DriveBase::turnToAngle(double degree){
