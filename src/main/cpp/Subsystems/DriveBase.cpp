@@ -61,6 +61,7 @@ void DriveBase::InitDefaultCommand() {
 
         const int kTimeoutMs = 30;
         piggy->SetFusedHeading(0.0, kTimeoutMs); /* reset heading, angle measurement wraps at plus/minus 23,040 degrees (64 rotations) */
+        _goStraight = GoStraightOff;
 }
 
 void DriveBase::Periodic() {
@@ -118,11 +119,116 @@ void DriveBase::Halt(){
 }
 
 void DriveBase::JoyDrive(double myX, double myY){
-    myX = myX *1;
-    myY = myY *-1;
-    driveTrain->ArcadeDrive(myX, myY);
+    //myX = myX *1;
+    //myY = myY *-1;
+
+		double forwardThrottle = myX * 1.0; /* sign so that positive is forward */
+		double turnThrottle = myY * -1.0; /* sign so that positive means turn left */
+
+		PigeonIMU::GeneralStatus genStatus;
+		double xyz_dps[3];
+		piggy->GetGeneralStatus(genStatus);
+		piggy->GetRawGyro(xyz_dps);
+        PigeonIMU::FusionStatus *stat = new PigeonIMU::FusionStatus();
+		piggy->GetFusedHeading(*stat);
+		double currentAngle = stat->heading;
+		bool angleIsGood = (piggy->GetState() == PigeonIMU::Ready) ? true : false;
+		double currentAngularRate = xyz_dps[2];
+        bool userWantsGoStraight = Robot::oi->getJoystick()->GetRawButton(5); /* top left shoulder button */
+
+		/* deadbands so centering joysticks always results in zero output */
+		forwardThrottle = DB(forwardThrottle);
+		turnThrottle = DB(turnThrottle);
+		switch (_goStraight) {
+
+			/* go straight is off, better check gamepad to see if we should enable the feature */
+			case GoStraightOff:
+				if (userWantsGoStraight == false) {
+					/* nothing to do */
+				} else if (angleIsGood == false) {
+					/* user wants to servo but Pigeon isn't connected? */
+					_goStraight = GoStraightSameThrottle; /* just apply same throttle to both sides */
+				} else {
+					/* user wants to servo, save the current heading so we know where to servo to. */
+					_goStraight = GoStraightWithPidgeon;
+					_targetAngle = currentAngle;
+				}
+				break;
+	
+			/* we are servo-ing heading with Pigeon */
+			case GoStraightWithPidgeon:
+				if (userWantsGoStraight == false) {
+					_goStraight = GoStraightOff; /* user let go, turn off the feature */
+				} else if (angleIsGood == false) {
+					_goStraight = GoStraightSameThrottle; /* we were servoing with pidgy, but we lost connection?  Check wiring and deviceID setup */
+				} else {
+					/* user still wants to drive straight, keep doing it */
+				}
+				break;
+	
+			/* we are simply applying the same throttle to both sides, apparently Pigeon is not connected */
+			case GoStraightSameThrottle:
+				if (userWantsGoStraight == false) {
+					_goStraight = GoStraightOff; /* user let go, turn off the feature */
+				} else {
+					/* user still wants to drive straight, keep doing it */
+				}
+				break;
+		}
+/* if we can servo with IMU, do the math here */
+		if (_goStraight == GoStraightWithPidgeon) {
+			/* very simple Proportional and Derivative (PD) loop with a cap,
+			 * replace with favorite close loop strategy or leverage future Talon <=> Pigeon features. */
+			turnThrottle = (_targetAngle - currentAngle) * kPgain - (currentAngularRate) * kDgain;
+			/* the max correction is the forward throttle times a scalar,
+			 * This can be done a number of ways but basically only apply small turning correction when we are moving slow
+			 * and larger correction the faster we move.  Otherwise you may need stiffer pgain at higher velocities. */
+			double maxThrot = MaxCorrection(forwardThrottle, kMaxCorrectionRatio);
+			turnThrottle = Cap(turnThrottle, maxThrot);
+		} else if (_goStraight == GoStraightSameThrottle) {
+			/* clear the turn throttle, just apply same throttle to both sides */
+			turnThrottle = 0;
+		} else {
+			/* do nothing */
+		}
+
+
+    driveTrain->ArcadeDrive(forwardThrottle,turnThrottle);
+    //driveTrain->ArcadeDrive(myX, myY);
    // driveTrain->TankDrive(myX, myY);
 }
+
+/** @return 10% deadband */
+double DriveBase::DB(double axisVal) {
+    if (axisVal < -0.10)
+        return axisVal;
+    if (axisVal > +0.10)
+        return axisVal;
+    return 0;
+}
+
+double DriveBase::Cap(double value, double peak) {
+    if (value < -peak)
+        return -peak;
+    if (value > +peak)
+        return +peak;
+    return value;
+}
+
+double DriveBase::MaxCorrection(double forwardThrot, double scalor) {
+    /* make it positive */
+    if (forwardThrot < 0) {
+        forwardThrot = -forwardThrot;
+    }
+    /* max correction is the current forward throttle scaled down */
+    forwardThrot *= scalor;
+    /* ensure caller is allowed at least 10% throttle,
+        * regardless of forward throttle */
+    if (forwardThrot < 0.10)
+        return 0.10;
+    return forwardThrot;
+}
+
 
 void DriveBase::turnToAngle(double degree){
     double c = getCurrentAngle();
