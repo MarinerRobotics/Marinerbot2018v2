@@ -36,6 +36,7 @@ DriveBase::DriveBase() : frc::Subsystem("DriveBase") {
     piggy.reset(new PigeonIMU(0));
     //piggy.reset(new PigeonIMU(*driveTrainLeftTalon));
    // piggy = new PigeonIMU(driveTrainLeftTalon);
+   stringy.reset(new frc::AnalogPotentiometer(0,3600,30));
 }
 
 void DriveBase::InitDefaultCommand() {
@@ -85,6 +86,9 @@ int distance = getCurrentEncoderPos();
 double dir = getCurrentAngle();
 double frontUltrasonic = getInchesToObject();
 int elpos = Robot::elevator->GetElPosition();
+double stringPotVal = stringy->Get();
+    //int stringPotVal = stringy->Get();
+std::cout 	<< "stringy : " << stringPotVal << std::endl;
 
 std::cout 	<< "dir : " << dir << std::endl;
 std::cout 	<< "leftPos : " << leftPos << std::endl;
